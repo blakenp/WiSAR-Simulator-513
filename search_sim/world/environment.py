@@ -2,7 +2,7 @@
     This class will implement the space we are searching.
 
     target_indices: list of (x,y) coordinate pairs for a given target. For example, [[0,2],[4,4]] for two targets. Coordinates are given as
-    incdices in an array.
+    indices in an array.
 
     x/y_length: spatial length, probably in meters, of the x/y dimension of the space.
 
