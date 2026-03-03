@@ -19,14 +19,24 @@
 """
 
 class Environment:    
-    def __init__(self, target_indices, target_values, hazard_indices, hazard_values, x_length=10, y_length=10, num_x_pts=10, num_y_pts=10):
+    def __init__(
+        self, 
+        target_indices, 
+        target_values, 
+        hazard_indices, 
+        hazard_values, 
+        x_length=10, 
+        y_length=10, 
+        num_x_pts=10, 
+        num_y_pts=10,
+    ) -> None:
         self.x_length = x_length
         self.y_length = y_length
         
         self.num_x_pts = num_x_pts
         self.num_y_pts = num_y_pts
 
-        self.grid = [[0 for i in range(num_x_pts)] for j in range(num_y_pts)]
+        self.grid = [[0 for _ in range(num_x_pts)] for _ in range(num_y_pts)]
 
         self.num_targets = len(target_indices)
 

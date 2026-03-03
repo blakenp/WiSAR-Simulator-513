@@ -1,4 +1,4 @@
-"""Targets Definitions module"""
+"""Targets Definitions Module"""
 
 from search_sim.targets.definitions.interfaces import Target
 from search_sim.targets.definitions.types import TargetType
