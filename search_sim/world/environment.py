@@ -1,10 +1,11 @@
+from node import Node
+from search_sim.targets.definitions import Target
+from search_sim.agents.definitions import Agent
+
 """
     This class will implement the space we are searching.
 
-    target/hazard_indices: list of (x,y) coordinate pairs for a given target/hazard. For example, [[0,2],[4,4]] for two targets. Coordinates are given as
-    indices in an array.
-
-    target/hazard_values: a numerical score associated with a particular target/hazard. maybe useful for some kind of cost function.
+    entities: list of targets, agents, and hazards in the environment. Each entity should know its own location.
 
     x/y_length: spatial length, probably in meters, of the x/y dimension of the space.
 
@@ -20,37 +21,45 @@
 
 class Environment:    
     def __init__(
-        self, 
-        target_indices, 
-        target_values, 
-        hazard_indices, 
-        hazard_values, 
-        x_length=10, 
-        y_length=10, 
-        num_x_pts=10, 
-        num_y_pts=10,
+        self,
+        entities: list[Target,Agent],  # if we implement Entity abstract class we can change this to a list of Entities
+        x_length: float = 10,
+        y_length: float = 10,
+        num_x_pts: int = 10,
+        num_y_pts: int = 10
     ) -> None:
+        
         self.x_length = x_length
         self.y_length = y_length
         
         self.num_x_pts = num_x_pts
         self.num_y_pts = num_y_pts
 
-        self.grid = [[0 for _ in range(num_x_pts)] for _ in range(num_y_pts)]
+        self.grid: list[list[Node]] = [[Node() for _ in range(num_x_pts)] for _ in range(num_y_pts)]
 
-        self.num_targets = len(target_indices)
-
-        for i in range(len(target_values)):
-            x = target_indices[i][0]
-            y = target_indices[i][1]
-            self.grid[y][x] = target_values[i]  # indexing is a little wonky, since python indexes rows first but rows match better
-                                                # with the y direction in my brain. the upshot is that if we want to be able to pass in coordinates
-                                                # as (x,y) pairs, then when we're accessing the grid we just need to flip the order and it's fine.
-
-        for i in range(len(hazard_values)):
-            x = hazard_indices[i][0]
-            y = hazard_indices[i][1]
-            self.grid[y][x] = hazard_values[i]
+        for entity in entities:
+            coords = entity.get_location()
+            x = coords[0]
+            y = coords[1]
+            self.grid[y][x].add(entity)  # indexing is a little wonky, since python indexes rows first but rows match better
+                                         # with the y direction in my brain. the upshot is that if we want to be able to pass in coordinates
+                                         # as (x,y) pairs, then when we're accessing the grid we just need to flip the order and it's fine.
         
         self.x_size = x_length/num_x_pts
         self.y_size = y_length/num_y_pts
+
+    
+
+    # getter and setter to access individual nodes
+
+    def get_node(self, coords: tuple[int,int]) -> Node:
+        x = coords[0]
+        y = coords[1]
+        
+        return self.grid[y][x]
+
+    def set_node(self, newNode: Node, coords: tuple[int,int]) -> None:
+        x = coords[0]
+        y = coords[1]
+
+        self.grid[y][x] = newNode
