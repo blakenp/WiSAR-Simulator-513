@@ -1,14 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+from search_sim.entities.interfaces import Entity
 
-class Target(ABC):
-    @abstractmethod
-    def get_id(self) -> str:
-        pass
-
-    @abstractmethod
-    def get_location(self) -> tuple[float,float]:
-        pass
-
+class Target(Entity):
     @abstractmethod
     def get_value(self) -> float:
         pass
