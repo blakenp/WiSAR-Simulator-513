@@ -1,6 +1,6 @@
 """Simulator Module"""
 
-from simulator.simulator import Simulator
+from search_sim.simulator.simulator import Simulator
 
 __all__ = [
     "Simulator"

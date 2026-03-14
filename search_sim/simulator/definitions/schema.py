@@ -2,27 +2,9 @@
 from dataclasses import dataclass
 from typing import List
 
-from search_sim.agents.definitions.dataclasses import AgentState
 from search_sim.agents.definitions.interfaces import Agent
 from search_sim.targets.definitions.interfaces import Target
 from search_sim.world.environment import Environment
-
-
-@dataclass(frozen=True)
-class SimulatorState:
-    """Immutable state snapshot of the simulation.
-    
-    Attributes:
-        timekeeper: Current simulation time.
-        environment: Current environment and its state.
-        agents: Current agents in simulation.
-        targets: Current targets in simulation.
-    """
-
-    timekeeper: Timekeeper
-    environment: Environment
-    agents: List[Agent]
-    targets: List[Target]
 
 @dataclass(frozen=True)
 class Timekeeper:
@@ -52,3 +34,33 @@ class Timekeeper:
         minutes: int = (total_seconds % 3600) // 60
         seconds: int = total_seconds % 60
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+@dataclass(frozen=True)
+class SimulatorState:
+    """Immutable state snapshot of the simulation.
+    
+    Attributes:
+        timekeeper: Current simulation time.
+        environment: Current environment and its state.
+        agents: Current agents in simulation.
+        targets: Current targets in simulation.
+    """
+
+    timekeeper: Timekeeper
+    environment: Environment
+    agents: List[Agent]
+    targets: List[Target]
+
+@dataclass(frozen=True)
+class SimulatorConfig:
+    """Immutable configuration for initializing the simulator.
+    
+    Attributes:
+        time_limit_seconds: Maximum time to run the simulation.
+        initial_environment: Initial environment state.
+        initial_agents: Initial agents in the simulation.
+        initial_targets: Initial targets in the simulation.
+    """
+
+    time_limit_seconds: float
+    step_time_seconds: float
