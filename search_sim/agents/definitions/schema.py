@@ -1,5 +1,11 @@
 from dataclasses import dataclass
-from search_sim.agents.definitions.types import AgentType
+from enum import Enum
+
+class AgentType(Enum):
+    """Types of agents in the simulation."""
+
+    RANDOM_AGENT = "random_agent"
+    DIRECT_PATH_FINDER_AGENT = "direct_path_finder_agent"
 
 @dataclass(frozen=True)
 class AgentState:
@@ -16,8 +22,8 @@ class AgentState:
         is_active: Whether agent is operational.
     """
 
-    agent_id: str
-    agent_type: AgentType
+    id: str
+    type: AgentType
     x: float
     y: float
     heading: float

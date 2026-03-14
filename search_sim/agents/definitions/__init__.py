@@ -1,8 +1,7 @@
 """Agents Defintions Module."""
 
 from search_sim.agents.definitions.interfaces import Agent
-from search_sim.agents.definitions.types import AgentType
-from search_sim.agents.definitions.dataclasses import AgentState, AgentAction
+from search_sim.agents.definitions.schema import AgentState, AgentAction, AgentType
 
 __all__ = [
     "Agent",
