@@ -4,6 +4,7 @@ from typing import List
 
 from search_sim.agents.definitions.interfaces import Agent
 from search_sim.targets.definitions.interfaces import Target
+from search_sim.hazards.definitions.interfaces import Hazard
 from search_sim.world.environment import Environment
 
 @dataclass(frozen=True)
@@ -44,12 +45,14 @@ class SimulatorState:
         environment: Current environment and its state.
         agents: Current agents in simulation.
         targets: Current targets in simulation.
+        hazards: Current hazards in simulation.
     """
 
     timekeeper: Timekeeper
     environment: Environment
     agents: List[Agent]
     targets: List[Target]
+    hazards: List[Hazard]
 
 @dataclass(frozen=True)
 class SimulatorConfig:
