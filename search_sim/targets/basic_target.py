@@ -1,8 +1,8 @@
-"""Basic target class"""
+"""Basic stationary target class"""
 
 from search_sim.entities.interfaces import Entity
 from search_sim.targets.definitions.interfaces import Target
-from search_sim.targets.definitions.schema import TargetState
+from search_sim.targets.definitions.schema import TargetState, TargetAction
 
 class BasicTarget(Target, Entity[TargetState]):
     def __init__(self, state: TargetState):
@@ -16,6 +16,9 @@ class BasicTarget(Target, Entity[TargetState]):
 
     def get_value(self) -> float:
         return self._state.value
+    
+    def get_desired_action(self):
+        return TargetAction(0,0)
 
     def update_state(self, new_state: TargetState) -> None:
-        pass # TODO: Implement if we want targets to have dynamic behavior
+        self._state = new_state
