@@ -9,6 +9,7 @@ class TargetType(Enum):
 
     BASIC_TARGET = "basic_target"
     RANDOM_TARGET = "random_target"
+    EVASIVE_TARGET = "evasive_target"
 
 @dataclass(frozen=True)
 class TargetState:
@@ -22,6 +23,7 @@ class TargetState:
         traversable_hazards: All hazard types the target can navigate through.
         heading: Heading in degrees (0-360).
         speed_mps: Current speed in meters per second.
+        max_speed: maximum speed the target can move.
         awareness_radius: distance around the target within which it can perceive its surroundings.
         nearby_agents: All agents within awareness_radius.
         nearby_targets: All other targets within awareness_radius.
@@ -35,6 +37,7 @@ class TargetState:
     traversable_hazards: list[Hazard]
     heading: float
     speed_mps: float
+    max_speed: float
     awareness_radius: float
     nearby_agents: list[Agent]
     nearby_targets: list[Target]
