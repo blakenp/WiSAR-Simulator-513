@@ -1,6 +1,8 @@
 from search_sim.simulator.definitions.schema import SimulatorState, SimulatorConfig, Timekeeper
 from search_sim.agents.definitions.schema import AgentState
 import search_sim.agents.factories.agent_factory as agent_factory
+from search_sim.targets.definitions.schema import TargetState
+from search_sim.utils import get_nearby_entities
 import math
 
 class Simulator:
@@ -37,12 +39,13 @@ class Simulator:
         current_state = self.get_state()
         current_agents = current_state.agents
         current_targets = current_state.targets
+        current_hazards = current_state.hazards
         dt = self._config.step_time_seconds
 
-        actions = {agent.get_id(): agent.get_desired_action() for agent in current_agents}
+        agent_actions = {agent.get_id(): agent.get_desired_action() for agent in current_agents}
         
         for agent in current_agents:
-            action = actions[agent.get_id()]
+            action = agent_actions[agent.get_id()]
             curr_state = agent._state
             
             rad = math.radians(action.target_heading)
@@ -62,6 +65,40 @@ class Simulator:
                 is_active=curr_state.is_active
             )
             agent.update_state(updated_agent_state)
+
+        """Targets need to know the timestep so they know how far they can go in a given action."""
+        target_actions = {target.get_id(): target.get_desired_action(dt) for target in current_targets}
+
+        for target in current_targets:
+            action = target_actions[target.get_id()]
+            curr_state = target._state
+            
+            rad = math.radians(action.target_heading)
+            distance = action.target_speed * dt
+            
+            new_x = curr_state.x + (math.cos(rad) * distance)
+            new_y = curr_state.y + (math.sin(rad) * distance)
+
+            """Check for agents, other targets, and hazards within some radius of the target's new position."""
+            new_agents, new_targets, new_hazards = get_nearby_entities(target.get_id(),new_x, new_y, curr_state.awareness_radius, 
+                                                                              current_agents, current_targets, current_hazards)
+            
+            updated_target_state = TargetState(
+                id=curr_state.id,
+                type=curr_state.type,
+                x=new_x,
+                y=new_y,
+                value = curr_state.value,
+                traversable_hazards=curr_state.traversable_hazards,
+                heading=action.target_heading,
+                speed_mps=action.target_speed,
+                max_speed = curr_state.max_speed,
+                awareness_radius=curr_state.awareness_radius,
+                nearby_agents=new_agents,
+                nearby_targets=new_targets,
+                nearby_hazards=new_hazards,
+            )
+            target.update_state(updated_target_state)
 
         if self.check_target_reached(current_agents, current_targets):
             print("Target reached! Stopping simulation.")
