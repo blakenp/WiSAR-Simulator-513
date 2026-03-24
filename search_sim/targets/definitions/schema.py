@@ -10,6 +10,7 @@ class TargetType(Enum):
     BASIC_TARGET = "basic_target"
     RANDOM_TARGET = "random_target"
     EVASIVE_TARGET = "evasive_target"
+    SMART_TARGET = "smart_target"
 
 @dataclass(frozen=True)
 class TargetState:
