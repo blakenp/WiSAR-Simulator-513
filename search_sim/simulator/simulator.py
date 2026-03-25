@@ -109,7 +109,8 @@ class Simulator:
             timekeeper=current_state.timekeeper.advance(),
             environment=current_state.environment,
             agents=current_agents,
-            targets=current_targets
+            targets=current_targets,
+            hazards=current_state.hazards
         )
 
     def check_target_reached(self, agents, targets) -> bool:

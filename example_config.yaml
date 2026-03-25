@@ -1,0 +1,38 @@
+world:
+  x_length: 20.0
+  y_length: 20.0
+  num_x_pts: 20
+  num_y_pts: 20
+
+timekeeper:
+  step: 0
+  time_step_seconds: 0.1
+
+simulation:
+  time_limit_seconds: 600.0
+  step_time_seconds: 0.1
+
+agents:
+  - id: "uav_1"
+    type: "direct_path_finder_agent"
+    x: 1.0
+    y: 1.0
+    belief:
+      type: "point"
+      target_x: 8.5
+      target_y: 8.5
+
+targets:
+  - id: "target_0"
+    type: "basic_target"
+    x: 8.5
+    y: 8.5
+    value: 100.0
+    traversable_hazards: []
+    heading: 0.0
+    speed_mps: 0.0
+    max_speed: 1.0
+    awareness_radius: 5.0
+    nearby_agents: []
+    nearby_targets: []
+    nearby_hazards: []
