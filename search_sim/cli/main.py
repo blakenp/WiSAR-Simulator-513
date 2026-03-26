@@ -1,4 +1,5 @@
 import argparse
+from search_sim.cli.input.simulator_builder import SimulatorBuilder
 from search_sim.cli.input.simulator_config_parser import SimulatorConfigParser
 from search_sim.simulator.simulator import Simulator
 
@@ -10,7 +11,8 @@ def main(args=None):
     )
     
     parsed_args = arg_parser.parse_args(args)
-    simulator_config_parser = SimulatorConfigParser()
+    simulator_config_builder = SimulatorBuilder()
+    simulator_config_parser = SimulatorConfigParser(config_builder=simulator_config_builder)
 
     try:
         config, state = simulator_config_parser.parse(parsed_args.config_path)
