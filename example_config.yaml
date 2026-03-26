@@ -28,7 +28,7 @@ targets:
     x: 8.5
     y: 8.5
     value: 100.0
-    traversable_hazards: []
+    traversable_hazards: ["tree"]
     heading: 0.0
     speed_mps: 0.0
     max_speed: 1.0
@@ -36,3 +36,13 @@ targets:
     nearby_agents: []
     nearby_targets: []
     nearby_hazards: []
+
+hazards: 
+  - id: "hazard_0"
+    x: 5.0
+    y: 5.0
+    type: "tree"
+  - id: "hazard_1"
+    x: 2.0
+    y: 2.0
+    type: "boulder"
