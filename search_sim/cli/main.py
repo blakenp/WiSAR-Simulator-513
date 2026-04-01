@@ -20,7 +20,7 @@ def main(args=None):
         print(f"Error: Could not find config file at {parsed_args.config_path}")
         return 1
 
-    sim = Simulator(config, state)
+    sim = Simulator(config, state, parsed_args.config_path)
     
     print(f"Starting simulation using: {parsed_args.config_path}")
     sim.run()

@@ -19,6 +19,9 @@ class Timekeeper:
 
     def advance(self) -> "Timekeeper":
         return Timekeeper(step=self.step + 1, time_step_seconds=self.time_step_seconds)
+    
+    def steps(self) -> int:
+        return self.step
 
     def elapsed_seconds(self) -> float:
         return self.step * self.time_step_seconds

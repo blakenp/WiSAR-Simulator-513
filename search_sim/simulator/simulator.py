@@ -2,6 +2,7 @@ from search_sim.simulator.definitions.schema import SimulatorState, SimulatorCon
 from search_sim.agents.definitions.schema import AgentState
 import search_sim.agents.factories.agent_factory as agent_factory
 from search_sim.targets.definitions.schema import TargetState
+from search_sim.simulator.logger import Logger
 from search_sim.utils import get_nearby_entities
 import math
 
@@ -15,11 +16,21 @@ class Simulator:
     def __init__(
         self, 
         config: SimulatorConfig,
-        initial_state: SimulatorState
+        initial_state: SimulatorState,
+        run_path: str
     ) -> None:
         self._state = initial_state
         self._config = config
         self.is_running = False
+
+        """Initialize the logger and log initial positions of entities."""
+        agents = initial_state.agents
+        targets = initial_state.targets
+        hazards = initial_state.hazards
+        size = (self._state.environment.x_length + self._state.environment.y_length)/2
+
+        self.logger = Logger("finished_runs", run_path, hazards, size)
+        self.logger.log_step(self._state.timekeeper.steps(), agents, targets)
         
         self.initialize()
 
@@ -112,6 +123,9 @@ class Simulator:
             targets=current_targets,
             hazards=current_state.hazards
         )
+
+        """Log the step we just completed."""
+        self.logger.log_step(self._state.timekeeper.steps(), self._state.agents, self._state.targets)
 
     def check_target_reached(self, agents, targets) -> bool:
         """Determines if any agent has entered a cell containing a target."""
