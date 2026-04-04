@@ -23,6 +23,16 @@ You can optionally specify the frames per second of the animation with the ```--
 
 ## Code structure
 
+### Agents
+
+We have implemented one agent so far (but hope to finish a 2nd one that will be a Bayesian filtering agent). Here are the differnt agent behaviors we have implemeted:
+
+- direct path finding agents know where the target is from the get go and simply move towards them to attempt to get into the same cell as them and finish the simulation.
+
+The behavior of our direct path agent is simply modeling a [Dubins Vehicle](https://en.wikipedia.org/wiki/Dubins_path), although our agent can have a non-constant velocity. What this means is that our agent is pretty simple in the sense that it has a dynamical function for updating its position ($\dot{x}, \dot{y}$) and that it also has some heading that can be adjusted $\dot{\theta}$ according to the agent's desired behavior.
+
+As for the specific code structure we went with this, we made a generic base class where the generic `AgentState` can be specified in concrete implementations of our interface-like class `Entity`. We made this class as flexible as possible to allow targets and hazards to also have concrete implementations of it, but we also made a more specific `Agent` abstract base class that describes basic agentic behavior we expected to see among all agent types, and so each of our concrete agent class implementations could simply implement both the `Entity[AgentState]` and `Agent` base classes.
+
 ### Targets
 
 We have implemented four target behaviors: static, evasive, random walking, and "intelligent":
@@ -49,3 +59,9 @@ These hazards are functionally identical in that they only store a position; the
 ### World
 
 The primary structure of this module is a 2D array of nodes. Each node stores a set that contains all of the entities in the cell.
+
+### Simulator
+
+The simulator's main responsibility in our codebase is to be the orchestrator of the physics and interaction of entities in our code. Although our agents and targets can make moves, we went with the approach of making it so the functions on targets and agents don't internally update state, but that rather an agent or target has a function that outputs their desired action, and then the simulator reads in the desired action and creates a new state for the entity that is moving and passes that into the entity's update state function. This way, the simulator is in charge of the orchestration of the dynamics of our model of interacting entities, and then entities only indicate their desires rather than having a `move` function or something similar. 
+
+We specifically bundled all updates of agents and targets so that we wouldn't update 1 agent's state in a simulation step before another agent had the opportunity to move so that we weren't creating situations in which an agent would make a decision based on another agent's action in the same step. By bundling all agent and target updates into a single discrete step, we eliminate 'race conditions' where one agent might react to another’s movement within the same frame. This allowed us to more easily construct snapshots of the simulator state at each step of the simulation, and to iteratively handle each entity's dynamics iteratively and synchronously. 
