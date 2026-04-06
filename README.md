@@ -23,6 +23,8 @@ You can optionally specify the frames per second of the animation with the ```--
 
 ## Code structure
 
+We have several modules that work together to simulate the behavior of the entire system. While there are some important differences in how each module is implemented, there are some significant similarities as well. Most instances of a given module maintain a state vector, which contains all the information needed to compute the next step taken by the module. We also have custom types, factory methods, and so forth for each module.
+
 ### Agents
 
 We have implemented one agent so far (but hope to finish a 2nd one that will be a Bayesian filtering agent). Here are the differnt agent behaviors we have implemeted:
