@@ -34,7 +34,7 @@ class Environment:
         self.num_x_pts = num_x_pts
         self.num_y_pts = num_y_pts
 
-        self.grid: list[list[EnvironmentGridNode]] = [[EnvironmentGridNode() for _ in range(num_x_pts)] for _ in range(num_y_pts)]
+        self.grid: list[list[EnvironmentGridNode]] = [[EnvironmentGridNode(id=(i,j)) for i in range(num_x_pts)] for j in range(num_y_pts)]
 
         self.x_size = x_length/num_x_pts
         self.y_size = y_length/num_y_pts

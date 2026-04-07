@@ -1,5 +1,6 @@
 from search_sim.targets.definitions import Target
 from search_sim.agents.definitions import Agent
+from search_sim.hazards.definitions import Hazard
 from search_sim.world.nodes.definitions.schema import EnvironmentNode
 from search_sim.world.nodes.definitions.interfaces import Node
 from typing import Optional
@@ -7,7 +8,8 @@ from typing import Optional
 """Basic node class to keep track of entities in the environment"""
 
 class EnvironmentGridNode(Node[EnvironmentNode]):
-    def __init__(self, population: Optional[set] = None) -> None:
+    def __init__(self, id: tuple[int], population: Optional[set] = None) -> None:
+        self._id = id
         self._data = EnvironmentNode(population=population or set())
 
     # methods to check for specific entity types
@@ -29,12 +31,20 @@ class EnvironmentGridNode(Node[EnvironmentNode]):
         
         return has_agent
     
+    def get_hazards(self) -> set[Hazard]:
+        hazards = set()
+        for entity in self._data.population:
+            if type(entity) == Hazard:
+                hazards.add(entity)
+
+        return hazards
+    
     def has_hazard(self) -> bool:
         has_hazard = False
 
-        # for entity in self._data.population:  # uncomment this section when Hazards are implemented
-        #     if type(entity) == Hazard:
-        #         has_hazard = True
+        for entity in self._data.population:
+            if type(entity) == Hazard:
+                has_hazard = True
 
         return has_hazard
     
