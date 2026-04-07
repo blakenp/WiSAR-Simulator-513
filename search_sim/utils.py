@@ -1,9 +1,9 @@
-from search_sim.agents.definitions.interfaces import Agent
-from search_sim.targets.definitions.interfaces import Target
-from search_sim.hazards.definitions.interfaces import Hazard
+from search_sim.agents.definitions.schema import AgentState
+from search_sim.targets.definitions.schema import TargetState
+from search_sim.hazards.definitions.schema import HazardState
 from math import sqrt, atan2, degrees, pi
 
-def get_nearby_entities(id, x, y, awareness, agents, targets, hazards) -> tuple[list[Agent], list[Target], list[Hazard]]:
+def get_nearby_entity_states(id, x, y, awareness, agents, targets, hazards) -> tuple[list[AgentState], list[TargetState], list[HazardState]]:
     """Identifies all other entities within a specified radius of a given point.
 
         Parameters:
@@ -15,20 +15,20 @@ def get_nearby_entities(id, x, y, awareness, agents, targets, hazards) -> tuple[
             targets: a list of all targets in the environment.
             hazards: a list of all hazards in the environment.
     """
-    new_agents = [agent for agent in agents 
+    new_agent_states = [agent._state for agent in agents 
                     if compute_distance(x,agent._state.x,y,agent._state.y) <= awareness
                     and id != agent._state.id]
         
-    new_targets = [target for target in targets 
+    new_target_states = [target._state for target in targets 
                     if compute_distance(x,target._state.x,y,target._state.y) <= awareness
                     and id != target._state.id]
 
-    new_hazards = [hazard for hazard in hazards
+    new_hazard_states = [hazard._state for hazard in hazards
                     if compute_distance(x,hazard._state.x,y,hazard._state.y) <= awareness
                     and id != hazard._state.id]
     
-    return new_agents, new_targets, new_hazards
-        
+    return new_agent_states, new_target_states, new_hazard_states
+
 def compute_distance(x_a: float, x_b: float, y_a: float, y_b: float) -> float:
     return sqrt((x_a - x_b)**2 + (y_a - y_b)**2)
 

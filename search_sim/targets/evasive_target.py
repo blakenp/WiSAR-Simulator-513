@@ -34,14 +34,14 @@ class EvasiveTarget(Target, Entity[TargetState]):
         entity_directions = []
 
         # pinpoint nearby agents and hazards
-        for agent in self._state.nearby_agents:
-            new_x = agent._state.x
-            new_y = agent._state.y
+        for agent_state in self._state.nearby_agent_states:
+            new_x = agent_state.x
+            new_y = agent_state.y
             entity_directions.append(compute_heading(x,new_x,y,new_y))
 
-        for hazard in self._state.nearby_hazards:
-            new_x = hazard._state.x
-            new_y = hazard._state.y
+        for hazard_state in self._state.nearby_hazard_states:
+            new_x = hazard_state.x
+            new_y = hazard_state.y
             entity_directions.append(compute_heading(x,new_x,y,new_y))
         
         n_directions = 16 + len(entity_directions)*4  # sample more angles if there are more things near the target
@@ -60,7 +60,7 @@ class EvasiveTarget(Target, Entity[TargetState]):
         scores = []
 
         for position in positions:
-            scores.append(self.score_move(position[0],position[1],self._state.nearby_agents,self._state.nearby_hazards))
+            scores.append(self.score_move(position[0],position[1],self._state.nearby_agent_states,self._state.nearby_hazard_states))
 
         action = candidate_actions[argmax(scores)]
         
@@ -82,7 +82,7 @@ class EvasiveTarget(Target, Entity[TargetState]):
 
 
     
-    def score_move(self, x, y, agents, hazards):
+    def score_move(self, x, y, agent_states, hazard_states):
         """Define scoring weights"""
         EVASION_WEIGHT = 0.5
         HAZARD_WEIGHT = 0.5
@@ -91,16 +91,16 @@ class EvasiveTarget(Target, Entity[TargetState]):
         score = 0.
 
         # Reward evasion (penalize proximity to agents)
-        for agent in agents:
-            agent_x = agent._state.x
-            agent_y = agent._state.y
+        for agent_state in agent_states:
+            agent_x = agent_state.x
+            agent_y = agent_state.y
             distance = compute_distance(x,agent_x,y,agent_y)
             score -= EVASION_WEIGHT * (1 / (distance + 1e-6))
         
         # Reward movement towards hazards
-        for hazard in hazards:
-            hazard_x = hazard._state.x
-            hazard_y = hazard._state.y
+        for hazard_state in hazard_states:
+            hazard_x = hazard_state.x
+            hazard_y = hazard_state.y
             distance = compute_distance(x,hazard_x,y,hazard_y)
             score += HAZARD_WEIGHT * (1 / (distance + 1e-6))
 

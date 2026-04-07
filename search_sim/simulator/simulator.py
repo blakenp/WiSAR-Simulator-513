@@ -4,7 +4,7 @@ from search_sim.agents.definitions.schema import AgentState
 import search_sim.agents.factories.agent_factory as agent_factory
 from search_sim.targets.definitions.schema import TargetState
 from search_sim.simulator.logger import Logger
-from search_sim.utils import get_nearby_entities
+from search_sim.utils import get_nearby_entity_states
 import math
 
 class Simulator:
@@ -94,7 +94,7 @@ class Simulator:
             new_y = curr_state.y + (math.sin(rad) * distance)
 
             """Check for agents, other targets, and hazards within some radius of the target's new position."""
-            new_agents, new_targets, new_hazards = get_nearby_entities(target.get_id(),new_x, new_y, curr_state.awareness_radius, 
+            new_agents, new_targets, new_hazards = get_nearby_entity_states(target.get_id(),new_x, new_y, curr_state.awareness_radius, 
                                                                               current_agents, current_targets, current_hazards)
             
             updated_target_state = TargetState(
@@ -108,9 +108,9 @@ class Simulator:
                 speed_mps=action.target_speed,
                 max_speed = curr_state.max_speed,
                 awareness_radius=curr_state.awareness_radius,
-                nearby_agents=new_agents,
-                nearby_targets=new_targets,
-                nearby_hazards=new_hazards,
+                nearby_agent_states=new_agents,
+                nearby_target_states=new_targets,
+                nearby_hazard_states=new_hazards,
             )
             target.update_state(updated_target_state)
 
