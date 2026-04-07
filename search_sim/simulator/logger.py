@@ -42,7 +42,7 @@ class Logger():
             writer.writerow(["entity_id","x","y","type","radius"])
             for hazard in hazards:
                 x, y = hazard.get_location()
-                writer.writerow([hazard.get_id(), x, y, hazard.get_type(), grid_size/2])
+                writer.writerow([hazard.get_id(), x, y, hazard.get_type().value, grid_size/2])
 
     def log_step(self, timestep, agents, targets, flush_frequency=10):
         """

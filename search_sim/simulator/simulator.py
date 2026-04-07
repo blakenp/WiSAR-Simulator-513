@@ -28,7 +28,7 @@ class Simulator:
         agents = initial_state.agents
         targets = initial_state.targets
         hazards = initial_state.hazards
-        size = (self._state.environment.x_length + self._state.environment.y_length)/2
+        size = (self._state.environment.x_size + self._state.environment.y_size)/2
 
         package_root = Path(__file__).resolve().parent.parent
         output_dir = package_root / "finished_runs"
