@@ -1,5 +1,5 @@
-from search_sim.agents.definitions.interfaces import Agent
-# from search_sim.targets.definitions.interfaces import Target
+from search_sim.agents.definitions.schema import AgentState
+from search_sim.hazards.definitions.schema import HazardState
 from search_sim.hazards.definitions.interfaces import Hazard
 from dataclasses import dataclass
 from enum import Enum
@@ -41,9 +41,9 @@ class TargetState:
     speed_mps: float
     max_speed: float
     awareness_radius: float
-    nearby_agents: list[Agent]
-    nearby_targets: list["Target"] # TODO: This creates a circular dependency. We may want to move TargetState to its own file to avoid this.
-    nearby_hazards: list[Hazard]
+    nearby_agent_states: list[AgentState]
+    nearby_target_states: list["TargetState"]
+    nearby_hazard_states: list[HazardState]
 
 @dataclass(frozen=True)
 class TargetAction:

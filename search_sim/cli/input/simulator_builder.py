@@ -74,9 +74,9 @@ class SimulatorBuilder:
                 speed_mps=float(target_config.get("speed_mps", 0.0)),
                 max_speed=float(target_config.get("max_speed", 1.0)),
                 awareness_radius=float(target_config.get("awareness_radius", 0.0)),
-                nearby_agents=[],
-                nearby_targets=[],
-                nearby_hazards=[]
+                nearby_agent_states=[],
+                nearby_target_states=[],
+                nearby_hazard_states=[]
             )
             
             targets.append(target_factory(state.type, target_state=state))
