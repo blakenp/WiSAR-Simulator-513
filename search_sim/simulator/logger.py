@@ -1,4 +1,5 @@
 import csv
+import os
 
 """Logger class to generate csv files of all entity positions throughout the simulation."""
 
@@ -12,8 +13,11 @@ class Logger():
             - hazard_size: how big to render the hazards in the animations
         """
 
-        self.agent_file = open(f"{output_dir}/{run_name}_agents.csv", "w", newline="")
-        self.target_file = open(f"{output_dir}/{run_name}_targets.csv", "w", newline="")
+        sanitized_run_name = os.path.splitext(os.path.basename(run_name))[0]
+        os.makedirs(output_dir, exist_ok=True)
+
+        self.agent_file = open(os.path.join(output_dir, f"{sanitized_run_name}_agents.csv"), "w", newline="")
+        self.target_file = open(os.path.join(output_dir, f"{sanitized_run_name}_targets.csv"), "w", newline="")
 
         self.agent_writer = csv.writer(self.agent_file)
         self.target_writer = csv.writer(self.target_file)
@@ -32,12 +36,13 @@ class Logger():
             - run_name: some string, such as the yaml filename, to distinguish between runs
             - hazards: list of hazards in the simulation
         """
-        with open(f"{output_dir}/{run_name}_hazards.csv", "w", newline="") as f:
+        sanitized_run_name = os.path.splitext(os.path.basename(run_name))[0]
+        with open(os.path.join(output_dir, f"{sanitized_run_name}_hazards.csv"), "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["entity_id","x","y","type","radius"])
             for hazard in hazards:
-                x,y = hazard.get_location()
-                writer.writerow(hazard.get_id(), x, y, hazard.get_type(), grid_size/2)
+                x, y = hazard.get_location()
+                writer.writerow([hazard.get_id(), x, y, hazard.get_type(), grid_size/2])
 
     def log_step(self, timestep, agents, targets, flush_frequency=10):
         """

@@ -1,3 +1,4 @@
+from pathlib import Path
 from search_sim.simulator.definitions.schema import SimulatorState, SimulatorConfig, Timekeeper
 from search_sim.agents.definitions.schema import AgentState
 import search_sim.agents.factories.agent_factory as agent_factory
@@ -29,7 +30,9 @@ class Simulator:
         hazards = initial_state.hazards
         size = (self._state.environment.x_length + self._state.environment.y_length)/2
 
-        self.logger = Logger("finished_runs", run_path, hazards, size)
+        package_root = Path(__file__).resolve().parent.parent
+        output_dir = package_root / "finished_runs"
+        self.logger = Logger(str(output_dir), run_path, hazards, size)
         self.logger.log_step(self._state.timekeeper.steps(), agents, targets)
         
         self.initialize()
