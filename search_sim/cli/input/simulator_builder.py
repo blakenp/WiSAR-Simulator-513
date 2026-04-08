@@ -44,6 +44,7 @@ class SimulatorBuilder:
                 type=AgentType(agent_config["type"]),
                 x=float(agent_config["x"]),
                 y=float(agent_config["y"]),
+                traversable_hazards=(agent_config["traversable_hazards"]),
                 heading=float(agent_config.get("heading", 0.0)),
                 battery_percent=float(agent_config.get("battery_percent", 100.0)),
                 speed_mps=float(agent_config.get("speed_mps", 0.0)),
@@ -96,9 +97,9 @@ class SimulatorBuilder:
 
         return hazards
 
-    def build_environment(self, agents: List[Agent], targets: List[Target], world_config: dict) -> Environment:
+    def build_environment(self, agents: List[Agent], targets: List[Target], hazards: List[Hazard], world_config: dict) -> Environment:
         return Environment(
-            entities=agents + targets,
+            entities=agents + targets + hazards,
             x_length=world_config['x_length'],
             y_length=world_config['y_length'],
             num_x_pts=world_config['num_x_pts'],

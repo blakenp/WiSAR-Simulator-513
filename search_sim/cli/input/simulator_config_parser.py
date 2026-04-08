@@ -25,7 +25,7 @@ class SimulatorConfigParser:
         targets = self._config_builder.build_targets(target_configs)
         hazards = self._config_builder.build_hazards(hazard_configs)
 
-        environment = self._config_builder.build_environment(agents, targets, world_config)
+        environment = self._config_builder.build_environment(agents, targets, hazards, world_config)
         simulator_config = self._config_builder.build_simulator_config(simulation_config)
 
         initial_state = self._config_builder.build_simulator_state(

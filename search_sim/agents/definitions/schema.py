@@ -16,6 +16,7 @@ class AgentState:
         agent_type: Type of agent.
         x: X position in grid cells.
         y: Y position in grid cells.
+        traversable_hazards: All hazard types the target can navigate through.
         heading: Heading in degrees (0-360).
         battery_percent: Battery level 0-100 (for UAVs).
         speed_mps: Current speed in meters per second.
@@ -26,6 +27,7 @@ class AgentState:
     type: AgentType
     x: float
     y: float
+    traversable_hazards: list[str]
     heading: float
     battery_percent: float
     speed_mps: float

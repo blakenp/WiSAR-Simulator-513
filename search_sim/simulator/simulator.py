@@ -56,7 +56,7 @@ class Simulator:
         current_hazards = current_state.hazards
         dt = self._config.step_time_seconds
 
-        agent_actions = {agent.get_id(): agent.get_desired_action() for agent in current_agents}
+        agent_actions = {agent.get_id(): agent.get_desired_action(dt, self._state.environment) for agent in current_agents}
         
         for agent in current_agents:
             action = agent_actions[agent.get_id()]
@@ -73,6 +73,7 @@ class Simulator:
                 type=curr_state.type,
                 x=new_x,
                 y=new_y,
+                traversable_hazards=curr_state.traversable_hazards,
                 heading=action.target_heading,
                 battery_percent=curr_state.battery_percent - (0.01 * dt),
                 speed_mps=action.target_speed,
@@ -129,6 +130,9 @@ class Simulator:
 
         """Log the step we just completed."""
         self.logger.log_step(self._state.timekeeper.steps(), self._state.agents, self._state.targets)
+
+        if self._state.timekeeper.steps() % 10 == 0:
+            print("Completed step ", self._state.timekeeper.steps())
 
     def check_target_reached(self, agents, targets) -> bool:
         """Determines if any agent has entered a cell containing a target."""
