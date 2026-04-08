@@ -2,6 +2,7 @@ from search_sim.agents.definitions.schema import AgentState
 from search_sim.targets.definitions.schema import TargetState
 from search_sim.hazards.definitions.schema import HazardState
 from math import sqrt, atan2, degrees, pi
+from numpy import linspace
 
 def get_nearby_entity_states(id, x, y, awareness, agents, targets, hazards) -> tuple[list[AgentState], list[TargetState], list[HazardState]]:
     """Identifies all other entities within a specified radius of a given point.
@@ -67,15 +68,34 @@ def sample_speeds(max_speed, n):
 def argmax(list):
     return max(range(len(list)), key=list.__getitem__)
 
-def validate_move(curr_x, curr_y, new_x, new_y, max_x, max_y, max_speed, hazards):
+def validate_move(curr_x, curr_y, new_x, new_y, max_speed, environment, traversable_hazards, resolution=100):
     """Checks if a proposed move is valid given speed constraints and hazard collisions."""
+
+    max_x = environment.x_length
+    max_y = environment.y_length
+
     distance = compute_distance(curr_x, new_x, curr_y, new_y)
     if distance > max_speed:
         return False
+    
+    """Construct a list of all unique nodes along the proposed trajectory"""
+    x_interval = linspace(curr_x,new_x,resolution)
+    y_interval = linspace(curr_y,new_y,resolution)
+    points = list(zip(x_interval,y_interval))
+    nodes = [environment.get_node(point) for point in points]
+    seen_ids = set()
+    unique_nodes = []
+    for node in nodes:
+        if node._id not in seen_ids:
+            seen_ids.add(node._id)
+            unique_nodes.append(node)
 
-    for hazard in hazards:
-        if compute_distance(new_x, hazard._state.x, new_y, hazard._state.y) <= hazard._state.radius:
-            return False
+    """Check each node sequentially for non-traversable hazards"""
+    for node in unique_nodes:
+        hazards = node.get_hazards()
+        for hazard in hazards:
+            if hazard.get_type().value not in traversable_hazards:
+                return False
         
     if new_x < 0 or new_y < 0:
         return False
