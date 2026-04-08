@@ -94,7 +94,7 @@ class EvasiveTarget(Target, Entity[TargetState]):
     
     def score_move(self, x, y, agent_states, hazard_states):
         """Define scoring weights"""
-        EVASION_WEIGHT = 0.7
+        EVASION_WEIGHT = 5.0
         HAZARD_WEIGHT = 0.5
 
         """Add contributions to the score from each agent/hazard in the neighborhood"""
@@ -105,14 +105,14 @@ class EvasiveTarget(Target, Entity[TargetState]):
             agent_x = agent_state.x
             agent_y = agent_state.y
             distance = compute_distance(x,agent_x,y,agent_y)
-            score -= EVASION_WEIGHT * (1 / (distance + 1e-6)**2)
+            score -= EVASION_WEIGHT * (1 / (distance + 1e-6))
         
         # Reward movement towards hazards
         for hazard_state in hazard_states:
             hazard_x = hazard_state.x
             hazard_y = hazard_state.y
             distance = compute_distance(x,hazard_x,y,hazard_y)
-            score += HAZARD_WEIGHT * (1 / (distance + 1e-6))
+            score += HAZARD_WEIGHT * (5 - distance)
 
         return score
     

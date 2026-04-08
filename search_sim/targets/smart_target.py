@@ -3,7 +3,7 @@
 from search_sim.entities.interfaces import Entity
 from search_sim.targets.definitions.interfaces import Target
 from search_sim.targets.definitions.schema import TargetState, TargetAction
-from search_sim.utils import compute_distance, compute_heading, sample_angles, sample_speeds, argmax
+from search_sim.utils import compute_distance, compute_heading, sample_angles, sample_speeds, argmax,validate_move
 from math import radians, cos, sin, degrees
 
 class SmartTarget(Target, Entity[TargetState]):
@@ -27,7 +27,7 @@ class SmartTarget(Target, Entity[TargetState]):
     
 
 
-    def get_desired_action(self, dt: float):
+    def get_desired_action(self, dt: float, environment):
         """Identify directions to study more carefully."""
         x = self._state.x
         y = self._state.y
@@ -56,12 +56,22 @@ class SmartTarget(Target, Entity[TargetState]):
             distance = action[1] * dt
             positions.append((x + cos(action[0]) * distance, y + sin(action[0]) * distance))
 
+        """Ensure proposed moves don't cross a non-traversable hazard or do other nonsensical things"""
+        valid_positions = []
+
+        for position in positions:
+            valid_positions.append(validate_move(x,y,position[0],position[1], self._state.max_speed,environment,
+                                                 self._state.traversable_hazards))
+
         """Score potential new positions"""
         scores = []
 
-        for position in positions:
+        to_check = [position for position, keep in zip(positions,valid_positions) if keep]
+
+        for position in to_check:
             scores.append(self.score_move(position[0],position[1],self._state.nearby_agent_states,self._state.nearby_hazard_states))
 
+        candidate_actions = [action for action, keep in zip(candidate_actions, valid_positions) if keep]
         action = candidate_actions[argmax(scores)]
         
         return TargetAction(degrees(action[0]),action[1])

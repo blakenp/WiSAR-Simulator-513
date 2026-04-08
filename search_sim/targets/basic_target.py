@@ -17,7 +17,7 @@ class BasicTarget(Target, Entity[TargetState]):
     def get_value(self) -> float:
         return self._state.value
     
-    def get_desired_action(self, dt: float):
+    def get_desired_action(self, dt: float, environment):
         return TargetAction(0,0)
 
     def update_state(self, new_state: TargetState) -> None:
