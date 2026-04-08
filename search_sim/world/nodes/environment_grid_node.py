@@ -17,7 +17,7 @@ class EnvironmentGridNode(Node[EnvironmentNode]):
         has_target = False
 
         for entity in self._data.population:
-            if type(entity) == Target:
+            if isinstance(entity, Target):
                 has_target = True
         
         return has_target
@@ -26,7 +26,7 @@ class EnvironmentGridNode(Node[EnvironmentNode]):
         has_agent = False
 
         for entity in self.get_population():
-            if type(entity) == Agent:
+            if isinstance(entity, Agent):
                 has_agent = True
         
         return has_agent
@@ -34,7 +34,7 @@ class EnvironmentGridNode(Node[EnvironmentNode]):
     def get_hazards(self) -> set[Hazard]:
         hazards = set()
         for entity in self._data.population:
-            if type(entity) == Hazard:
+            if isinstance(entity, Hazard):
                 hazards.add(entity)
 
         return hazards
@@ -43,7 +43,7 @@ class EnvironmentGridNode(Node[EnvironmentNode]):
         has_hazard = False
 
         for entity in self._data.population:
-            if type(entity) == Hazard:
+            if isinstance(entity, Hazard):
                 has_hazard = True
 
         return has_hazard
