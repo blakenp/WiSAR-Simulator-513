@@ -3,7 +3,7 @@
 from search_sim.entities.interfaces import Entity
 from search_sim.targets.definitions.interfaces import Target
 from search_sim.targets.definitions.schema import TargetState, TargetAction
-from search_sim.utils import compute_distance, compute_heading, sample_angles, sample_speeds, argmax
+from search_sim.utils import compute_distance, compute_heading, sample_angles, sample_speeds, argmax, validate_move
 from math import radians, cos, sin, degrees
 
 class EvasiveTarget(Target, Entity[TargetState]):
@@ -27,7 +27,7 @@ class EvasiveTarget(Target, Entity[TargetState]):
     
 
 
-    def get_desired_action(self, dt: float):
+    def get_desired_action(self, dt: float, environment):
         """Identify directions to study more carefully."""
         x = self._state.x
         y = self._state.y
@@ -56,12 +56,22 @@ class EvasiveTarget(Target, Entity[TargetState]):
             distance = action[1] * dt
             positions.append((x + cos(action[0]) * distance, y + sin(action[0]) * distance))
 
+        """Ensure proposed moves don't cross a non-traversable hazard or do other nonsensical things"""
+        valid_positions = []
+
+        for position in positions:
+            valid_positions.append(validate_move(x,y,position[0],position[1], self._state.max_speed,environment,
+                                                 self._state.traversable_hazards))
+
         """Score potential new positions"""
         scores = []
 
-        for position in positions:
+        to_check = [position for position, keep in zip(positions,valid_positions) if keep]
+
+        for position in to_check:
             scores.append(self.score_move(position[0],position[1],self._state.nearby_agent_states,self._state.nearby_hazard_states))
 
+        candidate_actions = [action for action, keep in zip(candidate_actions, valid_positions) if keep]
         action = candidate_actions[argmax(scores)]
         
         return TargetAction(degrees(action[0]),action[1])
@@ -84,7 +94,7 @@ class EvasiveTarget(Target, Entity[TargetState]):
     
     def score_move(self, x, y, agent_states, hazard_states):
         """Define scoring weights"""
-        EVASION_WEIGHT = 0.5
+        EVASION_WEIGHT = 0.7
         HAZARD_WEIGHT = 0.5
 
         """Add contributions to the score from each agent/hazard in the neighborhood"""
@@ -95,7 +105,7 @@ class EvasiveTarget(Target, Entity[TargetState]):
             agent_x = agent_state.x
             agent_y = agent_state.y
             distance = compute_distance(x,agent_x,y,agent_y)
-            score -= EVASION_WEIGHT * (1 / (distance + 1e-6))
+            score -= EVASION_WEIGHT * (1 / (distance + 1e-6)**2)
         
         # Reward movement towards hazards
         for hazard_state in hazard_states:

@@ -81,7 +81,7 @@ class Simulator:
             agent.update_state(updated_agent_state)
 
         """Targets need to know the timestep so they know how far they can go in a given action."""
-        target_actions = {target.get_id(): target.get_desired_action(dt) for target in current_targets}
+        target_actions = {target.get_id(): target.get_desired_action(dt, self._state.environment) for target in current_targets}
 
         for target in current_targets:
             action = target_actions[target.get_id()]

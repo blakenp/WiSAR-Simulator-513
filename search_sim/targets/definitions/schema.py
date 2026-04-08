@@ -36,7 +36,7 @@ class TargetState:
     y: float
     type: TargetType
     value: float
-    traversable_hazards: list[Hazard]
+    traversable_hazards: list[str]
     heading: float
     speed_mps: float
     max_speed: float

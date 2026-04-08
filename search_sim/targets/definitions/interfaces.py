@@ -8,6 +8,6 @@ class Target(Entity[TargetState]):
         pass
 
     @abstractmethod
-    def get_desired_action(self, dt: float) -> TargetAction:
+    def get_desired_action(self, dt: float, environment) -> TargetAction:
         """The target's decision-making method, which outputs the next most desirable action to be taken."""
         pass
