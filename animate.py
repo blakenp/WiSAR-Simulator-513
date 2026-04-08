@@ -5,6 +5,7 @@ import matplotlib.animation as animation
 import matplotlib.patches as mpatches
 import pandas as pd
 from tqdm import tqdm
+from math import floor
 
 
 # --- Visual config ---
@@ -51,15 +52,19 @@ def draw_hazards(ax, hazards_df):
     """
     for _, hazard in hazards_df.iterrows():
         style = HAZARD_STYLES.get(hazard.get("type", ""), HAZARD_DEFAULT_STYLE)
-        radius = hazard.get("radius", 1.0)
-        circle = mpatches.Circle(
+        x_size = hazard["x_size"]
+        y_size = hazard["y_size"]
+        
+        rect = mpatches.Rectangle(
             (hazard["x"], hazard["y"]),
-            radius=radius,
+            x_size,
+            y_size,
             color=style["color"],
             alpha=style["alpha"],
             zorder=style["zorder"],
         )
-        ax.add_patch(circle)
+
+        ax.add_patch(rect)
         # ax.text(
         #     hazard["x"], hazard["y"],
         #     hazard.get("type", ""),

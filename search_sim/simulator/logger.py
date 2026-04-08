@@ -4,7 +4,7 @@ import os
 """Logger class to generate csv files of all entity positions throughout the simulation."""
 
 class Logger():
-    def __init__(self, output_dir, run_name, hazards, hazard_size):
+    def __init__(self, output_dir, run_name, hazards, x_size, y_size):
         """
         Parameters:
             - output_dir: folder to save the csv files to
@@ -25,9 +25,9 @@ class Logger():
         self.agent_writer.writerow(["timestep","entity_id","x","y"])
         self.target_writer.writerow(["timestep","entity_id","x","y"])
 
-        self.write_hazards(output_dir, run_name, hazards, hazard_size)
+        self.write_hazards(output_dir, run_name, hazards, x_size, y_size)
 
-    def write_hazards(self, output_dir, run_name, hazards, grid_size):
+    def write_hazards(self, output_dir, run_name, hazards, x_size, y_size):
         """
         Records hazard positions and types at logger initialization.
 
@@ -39,10 +39,10 @@ class Logger():
         sanitized_run_name = os.path.splitext(os.path.basename(run_name))[0]
         with open(os.path.join(output_dir, f"{sanitized_run_name}_hazards.csv"), "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["entity_id","x","y","type","radius"])
+            writer.writerow(["entity_id","x","y","type","x_size","y_size"])
             for hazard in hazards:
                 x, y = hazard.get_location()
-                writer.writerow([hazard.get_id(), x, y, hazard.get_type().value, grid_size/2])
+                writer.writerow([hazard.get_id(), x, y, hazard.get_type().value, x_size, y_size])
 
     def log_step(self, timestep, agents, targets, flush_frequency=10):
         """

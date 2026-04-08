@@ -28,11 +28,10 @@ class Simulator:
         agents = initial_state.agents
         targets = initial_state.targets
         hazards = initial_state.hazards
-        size = (self._state.environment.x_size + self._state.environment.y_size)/2
 
         package_root = Path(__file__).resolve().parent.parent
         output_dir = package_root / "finished_runs"
-        self.logger = Logger(str(output_dir), run_path, hazards, size)
+        self.logger = Logger(str(output_dir), run_path, hazards, self._state.environment.x_size, self._state.environment.y_size)
         self.logger.log_step(self._state.timekeeper.steps(), agents, targets)
         
         self.initialize()
