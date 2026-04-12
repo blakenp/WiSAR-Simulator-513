@@ -1,0 +1,70 @@
+world:
+  x_length: 20.0
+  y_length: 20.0
+  num_x_pts: 20
+  num_y_pts: 20
+
+timekeeper:
+  step: 0
+  time_step_seconds: 0.1
+
+simulation:
+  time_limit_seconds: 120.0 # Increased for more complex navigation
+  step_time_seconds: 0.1
+
+agents:
+  - id: "voronoi_uav_1"
+    type: "voronoi_bayes_agent"
+    x: 2.0
+    y: 2.0
+    traversable_hazards: ["undergrowth"] # Agent will try to avoid boulders/trees/water
+    heading: 45.0
+    battery_percent: 100.0
+    speed_mps: 1.5
+    is_active: true
+    # Sensor parameters for the Bayesian Likelihood model:
+    sensor_range: 8.0
+    num_rays: 12
+    sensor_noise: 0.2 # Sigma for the Gaussian noise model
+    target_belief:
+      type: "point"
+      target_x: 18.0
+      target_y: 18.0
+    hazard_belief:
+      type: "uniform"
+
+targets:
+  - id: "target_0"
+    type: "evasive_target"
+    x: 18.0
+    y: 18.0
+    value: 100.0
+    traversable_hazards: ["tree", "standing_water", "undergrowth"]
+    heading: 0.0
+    speed_mps: 0.0
+
+hazards:
+  # Cluster 1: Central "Island" of Boulders
+  - {id: "h0", x: 10.0, y: 10.0, type: "boulder"}
+  - {id: "h1", x: 11.0, y: 10.0, type: "boulder"}
+  - {id: "h2", x: 10.0, y: 11.0, type: "boulder"}
+  - {id: "h3", x: 11.0, y: 11.0, type: "boulder"}
+
+  # Cluster 2: A "Screen" of trees forcing the agent to find a gap
+  - {id: "h4", x: 6.0, y: 14.0, type: "tree"}
+  - {id: "h5", x: 7.0, y: 14.0, type: "tree"}
+  - {id: "h6", x: 8.0, y: 14.0, type: "tree"}
+  - {id: "h7", x: 11.0, y: 14.0, type: "tree"} # Gap between 8.0 and 11.0
+  - {id: "h8", x: 12.0, y: 14.0, type: "tree"}
+
+  # Cluster 3: Water hazards creating narrow channels
+  - {id: "h9", x: 14.0, y: 6.0, type: "running_water"}
+  - {id: "h10", x: 14.0, y: 7.0, type: "running_water"}
+  - {id: "h11", x: 14.0, y: 8.0, type: "running_water"}
+  - {id: "h12", x: 15.0, y: 8.0, type: "running_water"}
+
+  # Distributed "Noise" obstacles to test MCMC filtering
+  - {id: "h13", x: 4.0, y: 8.0, type: "boulder"}
+  - {id: "h14", x: 16.0, y: 4.0, type: "undergrowth"}
+  - {id: "h15", x: 2.0, y: 16.0, type: "boulder"}
+  - {id: "h16", x: 18.0, y: 10.0, type: "tree"}

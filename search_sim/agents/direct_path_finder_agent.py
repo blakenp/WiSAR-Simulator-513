@@ -9,9 +9,9 @@ from numpy import pi
 import math
 
 class DirectPathFinderAgent(Agent, Entity[AgentState]):
-    def __init__(self, initial_agent_state: AgentState, initial_map: ProbabilityMap):
+    def __init__(self, initial_agent_state: AgentState, initial_target_belief_map: ProbabilityMap):
         self._state = initial_agent_state
-        self.belief_map = initial_map
+        self.belief_map = initial_target_belief_map
 
     def get_id(self) -> str:
         return self._state.id

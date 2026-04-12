@@ -18,7 +18,8 @@ agents:
     x: 1.0
     y: 1.0
     speed_mps: 0.5
-    belief:
+    traversable_hazards: ["standing_water", "undergrowth"]
+    target_belief:
       type: "point"
       target_x: 8.5
       target_y: 8.5
