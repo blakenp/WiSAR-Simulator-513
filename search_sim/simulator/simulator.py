@@ -1,11 +1,12 @@
 from pathlib import Path
+from search_sim.agents.definitions.interfaces import Agent
 from search_sim.simulator.definitions.schema import SimulatorState, SimulatorConfig, Timekeeper
-from search_sim.agents.definitions.schema import AgentState
-import search_sim.agents.factories.agent_factory as agent_factory
+from search_sim.agents.definitions.schema import AgentState, AgentType, SensorObservation
 from search_sim.targets.definitions.schema import TargetState
 from search_sim.simulator.logger import Logger
 from search_sim.utils import get_nearby_entity_states
 import math
+import random
 
 class Simulator:
     """Main simulation engine.
@@ -55,7 +56,13 @@ class Simulator:
         current_hazards = current_state.hazards
         dt = self._config.step_time_seconds
 
-        agent_actions = {agent.get_id(): agent.get_desired_action(dt, self._state.environment) for agent in current_agents}
+        agent_actions = {}
+        for agent in current_agents:
+            if agent._state.type == AgentType.VORONOI_BAYES_AGENT:
+                readings = self.get_sensor_readings(agent)
+                agent.update_belief(readings)
+            
+            agent_actions[agent.get_id()] = agent.get_desired_action(dt, self._state.environment)
         
         for agent in current_agents:
             action = agent_actions[agent.get_id()]
@@ -76,7 +83,11 @@ class Simulator:
                 heading=action.target_heading,
                 battery_percent=curr_state.battery_percent - (0.01 * dt),
                 speed_mps=action.target_speed,
-                is_active=curr_state.is_active
+                is_active=curr_state.is_active,
+                sensor_range=curr_state.sensor_range,
+                num_rays=curr_state.num_rays,
+                sensor_noise=curr_state.sensor_noise,
+                recent_sensor_readings=self.get_sensor_readings(agent) if curr_state.type == AgentType.VORONOI_BAYES_AGENT else []
             )
             agent.update_state(updated_agent_state)
 
@@ -117,6 +128,7 @@ class Simulator:
         if self.check_target_reached(current_agents, current_targets):
             print("Target reached! Stopping simulation.")
             self.stop()
+            return
 
         # Advance State Snapshot
         self._state = SimulatorState(
@@ -129,6 +141,10 @@ class Simulator:
 
         """Log the step we just completed."""
         self.logger.log_step(self._state.timekeeper.steps(), self._state.agents, self._state.targets)
+
+        for agent in self._state.agents:
+            if hasattr(agent, 'last_computed_ridges') and agent.last_computed_ridges:
+                self.logger.log_voronoi_ridges(self._state.timekeeper.steps(), agent.last_computed_ridges)
 
         if self._state.timekeeper.steps() % 10 == 0:
             print("Completed step ", self._state.timekeeper.steps())
@@ -146,6 +162,36 @@ class Simulator:
                 if agent_indices == target_indices:
                     return True
         return False
+    
+    def get_sensor_readings(self, agent: Agent) -> list[SensorObservation]:
+        state = agent._state
+        noisy_readings = []
+        
+        # Calculate how far apart each ray should be
+        # num_rays = 4 means 0, 90, 180, 270 degrees
+        step_bearing = 360.0 / state.num_rays
+
+        for i in range(state.num_rays):
+            rel_bearing = i * step_bearing
+            abs_angle_rad = math.radians((state.heading + rel_bearing) % 360)
+            
+            true_dist = self._state.environment.handle_ray_cast(
+                origin_x=state.x,
+                origin_y=state.y,
+                angle_rad=abs_angle_rad,
+                max_range=state.sensor_range,
+                traversable_hazards=state.traversable_hazards
+            )
+            
+            noise = random.gauss(0, state.sensor_noise)
+            
+            noisy_readings.append(SensorObservation(
+                distance=max(0, true_dist + noise),
+                bearing=rel_bearing,
+                noise_sigma=state.sensor_noise
+            ))
+            
+        return noisy_readings
 
     def run(self) -> None:
         """Run the simulation loop until time limit or stopped."""
@@ -159,3 +205,4 @@ class Simulator:
     def stop(self) -> None:
         """Stop the simulation."""
         self.is_running = False
+        self.logger.close()

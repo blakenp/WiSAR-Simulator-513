@@ -33,6 +33,15 @@ class SimulatorBuilder:
             target_coordinates = (float(belief_config["target_x"]), float(belief_config["target_y"]))
             node = probability_map.get_node(target_coordinates)
             node.update_node_data(ProbabilityNode(probability=1.0))
+
+        elif distribution_type == "uniform":
+            total_nodes = world_config['num_x_pts'] * world_config['num_y_pts']
+            uniform_prob = 1.0 / total_nodes
+            
+            for y in range(probability_map.num_y_pts):
+                for x in range(probability_map.num_x_pts):
+                    node = probability_map.grid[y][x]
+                    node.update_node_data(ProbabilityNode(probability=uniform_prob))
             
         return probability_map
     
@@ -48,13 +57,22 @@ class SimulatorBuilder:
                 heading=float(agent_config.get("heading", 0.0)),
                 battery_percent=float(agent_config.get("battery_percent", 100.0)),
                 speed_mps=float(agent_config.get("speed_mps", 0.0)),
-                is_active=bool(agent_config.get("is_active", True))
+                is_active=bool(agent_config.get("is_active", True)),
+                sensor_range=float(agent_config.get("sensor_range", 0.0)),
+                num_rays=int(agent_config.get("num_rays", 0)),
+                sensor_noise=float(agent_config.get("sensor_noise", 0.0)),
+                recent_sensor_readings=[]
             )
 
-            belief_config = agent_config.get("belief", {"type": "uniform"})
-            initial_map = self.generate_agent_initial_belief_map(belief_config, world_config)
+            target_belief_config = agent_config.get("target_belief", {"type": "uniform"})
+            initial_target_belief_map = self.generate_agent_initial_belief_map(target_belief_config, world_config)
 
-            agents.append(agent_factory(state.type, initial_state=state, initial_map=initial_map))
+            if state.type == AgentType.VORONOI_BAYES_AGENT:
+                hazard_belief_config = agent_config.get("hazard_belief", {"type": "uniform"})
+                initial_hazard_belief_map = self.generate_agent_initial_belief_map(hazard_belief_config, world_config)
+                agents.append(agent_factory(state.type, initial_state=state, initial_target_belief_map=initial_target_belief_map, initial_hazard_belief_map=initial_hazard_belief_map))
+            else:
+                agents.append(agent_factory(state.type, initial_state=state, initial_target_belief_map=initial_target_belief_map))
 
         return agents 
     

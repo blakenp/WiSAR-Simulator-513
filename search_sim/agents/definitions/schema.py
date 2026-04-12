@@ -1,11 +1,19 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import List, Optional
 
 class AgentType(Enum):
     """Types of agents in the simulation."""
 
     RANDOM_AGENT = "random_agent"
     DIRECT_PATH_FINDER_AGENT = "direct_path_finder_agent"
+    VORONOI_BAYES_AGENT = "voronoi_bayes_agent"
+
+@dataclass(frozen=True)
+class SensorObservation:
+    distance: float
+    bearing: float
+    noise_sigma: float
 
 @dataclass(frozen=True)
 class AgentState:
@@ -32,6 +40,10 @@ class AgentState:
     battery_percent: float
     speed_mps: float
     is_active: bool
+    sensor_range: Optional[float] = None
+    num_rays: Optional[int] = None
+    sensor_noise: Optional[float] = None
+    recent_sensor_readings: Optional[List[SensorObservation]] = None
     
 @dataclass(frozen=True)
 class AgentAction:
