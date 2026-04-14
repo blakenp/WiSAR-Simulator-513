@@ -1,4 +1,6 @@
 from math import floor
+import math
+from typing import List
 from search_sim.world.nodes.environment_grid_node import EnvironmentGridNode
 from search_sim.world.nodes.definitions.schema import EnvironmentNode
 from search_sim.entities.interfaces import Entity
@@ -70,3 +72,43 @@ class Environment:
         x, y = self.get_indices(coords)
 
         self.grid[y][x] = newNode
+
+    def handle_ray_cast(
+        self, 
+        origin_x: float, 
+        origin_y: float, 
+        angle_rad: float, 
+        max_range: float, 
+        traversable_hazards: List[str]
+    ) -> float:
+        """
+        Traces a ray from (origin_x, origin_y) at angle_rad.
+        Returns the distance to the first obstacle or max_range.
+        """
+        # Unit vector for the ray direction
+        dx = math.cos(angle_rad)
+        dy = math.sin(angle_rad)
+
+        # We step at a resolution smaller than our smallest grid cell 
+        # to ensure we don't "jump" over a corner.
+        step_size = min(self.x_size, self.y_size) * 0.5
+        
+        current_dist = 0.0
+        
+        while current_dist < max_range:
+            target_x = origin_x + dx * current_dist
+            target_y = origin_y + dy * current_dist
+            
+            if not (0 <= target_x < self.x_length and 0 <= target_y < self.y_length):
+                return current_dist
+
+            node = self.get_node((target_x, target_y))
+            node_data = node.get_node_data()
+
+            for entity in node_data.population:
+                if hasattr(entity, '_state') and entity._state.type.value not in traversable_hazards:
+                    return current_dist
+            
+            current_dist += step_size
+
+        return max_range
