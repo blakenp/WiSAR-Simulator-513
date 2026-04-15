@@ -1,0 +1,100 @@
+world:
+  x_length: 20.0
+  y_length: 20.0
+  num_x_pts: 20
+  num_y_pts: 20
+
+timekeeper:
+  step: 0
+  time_step_seconds: 0.1
+
+simulation:
+  time_limit_seconds: 240.0 # High limit for complex exploration
+  step_time_seconds: 0.1
+
+agents:
+  - id: "voronoi_uav_1"
+    type: "voronoi_bayes_agent"
+    x: 1.5
+    y: 1.5
+    traversable_hazards: ["undergrowth"]
+    heading: 90.0
+    speed_mps: 1.2
+    sensor_range: 6.5 # Slightly shorter range forces the agent to "discover" walls
+    num_rays: 18      # High ray count to prevent "teleporting" through thin walls
+    sensor_noise: 0.1
+    target_belief:
+      type: "point"
+      target_x: 18.5
+      target_y: 18.5
+    hazard_belief:
+      type: "uniform"
+
+targets:
+  - id: "target_0"
+    type: "evasive_target"
+    x: 18.5
+    y: 18.5
+    value: 100.0
+    traversable_hazards: ["tree", "standing_water"]
+    speed_mps: 0.0
+
+hazards:
+  # --- Outer Perimeter (Enforcing the Box) ---
+  # South Wall (partial)
+  - {id: "p1", x: 0.0, y: 10.0, type: "boulder"}
+  - {id: "p2", x: 1.0, y: 10.0, type: "boulder"}
+  - {id: "p3", x: 2.0, y: 10.0, type: "boulder"}
+  - {id: "p4", x: 3.0, y: 10.0, type: "boulder"}
+  - {id: "p5", x: 4.0, y: 10.0, type: "boulder"}
+
+  # --- Chamber 1: The First Switchback ---
+  # Vertical Wall forcing East movement
+  - {id: "c1_1", x: 6.0, y: 0.0, type: "tree"}
+  - {id: "c1_2", x: 6.0, y: 1.0, type: "tree"}
+  - {id: "c1_3", x: 6.0, y: 2.0, type: "tree"}
+  - {id: "c1_4", x: 6.0, y: 3.0, type: "tree"}
+  - {id: "c1_5", x: 6.0, y: 4.0, type: "tree"}
+  - {id: "c1_6", x: 6.0, y: 5.0, type: "tree"}
+  - {id: "c1_7", x: 6.0, y: 6.0, type: "tree"}
+  - {id: "c1_8", x: 6.0, y: 7.0, type: "tree"}
+  # Entrance to Chamber 2 is at (6, 9)
+
+  # --- Chamber 2: The High Corridor ---
+  # Horizontal "Ceiling" forcing a long walk to the West
+  - {id: "c2_1", x: 14.0, y: 14.0, type: "boulder"}
+  - {id: "c2_2", x: 13.0, y: 14.0, type: "boulder"}
+  - {id: "c2_3", x: 12.0, y: 14.0, type: "boulder"}
+  - {id: "c2_4", x: 11.0, y: 14.0, type: "boulder"}
+  - {id: "c2_5", x: 10.0, y: 14.0, type: "boulder"}
+  - {id: "c2_6", x: 9.0, y: 14.0, type: "boulder"}
+  - {id: "c2_7", x: 8.0, y: 14.0, type: "boulder"}
+  - {id: "c2_8", x: 7.0, y: 14.0, type: "boulder"}
+  - {id: "c2_9", x: 6.0, y: 14.0, type: "boulder"}
+  # Entrance to final zone is at (4.0, 14.0)
+
+  # --- Chamber 3: The Spiral Trap ---
+  # Vertical Wall shielding the target
+  - {id: "c3_1", x: 14.0, y: 0.0, type: "running_water"}
+  - {id: "c3_2", x: 14.0, y: 1.0, type: "running_water"}
+  - {id: "c3_3", x: 14.0, y: 2.0, type: "running_water"}
+  - {id: "c3_4", x: 14.0, y: 3.0, type: "running_water"}
+  - {id: "c3_5", x: 14.0, y: 4.0, type: "running_water"}
+  - {id: "c3_6", x: 14.0, y: 5.0, type: "running_water"}
+  - {id: "c3_7", x: 14.0, y: 6.0, type: "running_water"}
+  - {id: "c3_8", x: 14.0, y: 7.0, type: "running_water"}
+  - {id: "c3_9", x: 14.0, y: 8.0, type: "running_water"}
+  - {id: "c3_10", x: 14.0, y: 9.0, type: "running_water"}
+  - {id: "c3_11", x: 14.0, y: 10.0, type: "running_water"}
+
+  # --- The "Hook" (Final wall to force the agent around the corner) ---
+  - {id: "h1", x: 14.0, y: 14.0, type: "boulder"}
+  - {id: "h2", x: 15.0, y: 14.0, type: "boulder"}
+  - {id: "h3", x: 16.0, y: 14.0, type: "boulder"}
+  - {id: "h4", x: 17.0, y: 14.0, type: "boulder"}
+  # Target is at 18.5, 18.5 - Agent must go East past x=14, then North.
+
+  # --- Confuse-O-Matic Pillars (Testing Centroid Repulsion) ---
+  - {id: "p_1", x: 3.0, y: 5.0, type: "boulder"}
+  - {id: "p_2", x: 10.0, y: 10.0, type: "tree"}
+  - {id: "p_3", x: 17.0, y: 5.0, type: "boulder"}
