@@ -60,11 +60,17 @@ The state vector varies in what it contains depending on what kind of entity it 
 
 ### Agents
 
-The abstract class `Agent` is one implementation of the `Entity` class. At the moment, we only have one finished agent behavior implementation, but hope to finish another one shortly. The one behavior we have implemented is a "direct path finder" agent which knows the initial position of a target and attempts to travel in a straight line to that point. If it encounters a hazard which it cannot navigate through, or any other obstruction to its straight line travel, it will attempt to navigate around it by checking directions progressively further away from the straight line. This algorithm is illustrated graphially in the figure below.
+The abstract class `Agent` is one implementation of the `Entity` class. We have currently finished agent behavior implementation for 2 distinct agents. The first behavior we have implemented is a "direct path finder" agent which knows the initial position of a target and attempts to travel in a straight line to that point. If it encounters a hazard which it cannot navigate through, or any other obstruction to its straight line travel, it will attempt to navigate around it by checking directions progressively further away from the straight line. This algorithm is illustrated graphically in the figure below.
 
 <img src="direct_path_algorithm.svg" width="900">
 
 The behavior of our direct path agent is simply modeling a [Dubins Vehicle](https://en.wikipedia.org/wiki/Dubins_path). What this means is that our agent is pretty simple in the sense that it has a dynamical function for updating its position ($\dot{x}, \dot{y}$) and that it also has some heading that can be adjusted $\dot{\theta}$ according to the agent's desired behavior.
+
+The second agent we implemented is the voronoi bayes agent that uses _Markov Chain Monte Carlo_ sampling of possible hazard locations combined with voronoi map generation to safely traverse through a scenario, avoiding obstacles and making it to the target. A Voronoi map/diagram is a geometric tessellation of Euclidean space, in which you have clusters with center points known as centroids that are enclosed by convex shapes. Robot path planning used this tessellation of the environment back in a [research paper](https://ieeexplore.ieee.org/document/6631230) from 2013 by Kyle Ok et al that used _Voronoi Uncertainty Fields_ for path planning. We use a similar strategy, but with a more Bayesian approach.
+
+The behavior of target finding is similar to the direct path agent in the fact that this agent also knows where the target is from the beginning, but doesn't know where the hazards are and must use simulated noisy sensors applying ray casting to update its belief about the environment and safely find a path to the target. Below is an illustration of the main workflow that represent's this agent's algorithm:
+
+<img src="voronoi_bayes_agent.svg" width="900">
 
 ### Targets
 
@@ -97,7 +103,9 @@ The primary structure of this module is a 2D array of nodes. Each node stores a 
 
 ## Example Simulation Animations
 
-Below are a few example animations of simulations that were run on our software. All of these simulations feature the direct path agent mentioned above, so the agent behavior is not particularly intelligent. If the animations aren't rendering properly, please use the link at the top of the README to navigate to the Github repository, where they should be visible.
+Below are a few example animations of simulations that were run on our software. If the animations aren't rendering properly, please use the link at the top of the README to navigate to the Github repository, where they should be visible.
+
+### Direct Path Agent Results
 
 #### Small environment, single evasive target
 
@@ -116,3 +124,32 @@ Two targets evading two agents. The agents are unable to cross the river and so 
 ![Two Smart Target Animation](search_sim/animations/smart_test.gif)
 
 Two targets trying to be found by two agents. The agents are again unable to cross the river for the same reasons as above. The targets' awareness radii are big enough that the target which moves toward the river is able to "see" the agents and attempt to reach them, but the simulation never quite terminates. We believe the target's move scoring algorithm reaches some sort of equilibrium between wanting to move toward the agents and not wanting to be more surrounded by hazards *just* before the simulation would otherwise terminate.
+
+### Voronoi Bayes Agent
+
+Below are some of the examples of simulator results with the Voronoi Bayes Agent. The noisy shapes you see each time step are the edges of the voronoi map that is generated and there are 12 _MCMC_ samples each timestep, which is why you will see some variance here and there.
+
+#### Small and Simple Environment, Single Agent
+
+![Single VBA Single Target Animation](search_sim/animations/voronoi_bayes_test_animation3.gif)
+
+As we can see, the sensor readings are pretty noisy but overall do a decent job at enclosing hazards the agents detects when the sensor picks up new readings. Sometimes, however, the edges explode off into infinity, which can happen with voronoi diagram generation, and so in the next examples I enclose the voronoi diagram and pad it by adding virtual Voronoi boundary centroids, which helped to get some slightly better results.
+
+#### More, but Still Small Hazards, Single Agent
+
+![Single VBA Single Target More Hazards Animation](search_sim/animations/voronoi_bayes_test_animation_maze2.gif)
+
+As we can see here, the agent does a good job avoiding obstacles, sometimes getting stuck in small loops, but manages to reach the target in safety. Sometimes, the agent would follow the ridges of the voronoi map too closely, when it should have just went straight for the target like at the very end there, but overall pretty good behavior. Future research will have to be done to see how this would play out with a dynamic target. 
+
+#### More and Bigger Hazards, Single Agent
+
+![Single VBA Single Target More Bigger Hazards Animation](search_sim/animations/voronoi_bayes_test_animation_maze.gif)
+
+There is a lot to unpack here, but to be brief, the agent still struggles a lot in environments with longer spanning hazards. It can usually eventually get to the target, but there were many times testing this same scenario with the same hyperparameters in which the agent would simply get stuck and never find the target. Thus, this agent is still very fragile in more complex environments, and more research needs to be done to discover more robust and intelligent reward signals to get the agent to still remain safe, but not loop as much and reach the target faster. Currently, it is likely that there is too much noise per time step to know which edge of the voronoi map to follow for safety, causing confusion to the agent when timesteps shift the voronoi map around too much, so maybe smoothing across time steps could help with convergence.
+
+## References
+
+- [Wikipedia: Voronoi Diagrams](https://en.wikipedia.org/wiki/Voronoi_diagram)
+- [Kyle Ok et al IEEE 2013 Path planning with uncertainty: Voronoi Uncertainty Fields](https://ieeexplore.ieee.org/document/6631230)
+- [Wikipedia: Dubins Vehicle](https://en.wikipedia.org/wiki/Dubins_path)
+- [BYU FROST Lab's ocean search and rescue simulator](https://frostlab.byu.edu/research/HoloOcean-Underwater-Simulator/)
