@@ -1,0 +1,62 @@
+world:
+  x_length: 20.0
+  y_length: 20.0
+  num_x_pts: 20
+  num_y_pts: 20
+
+timekeeper:
+  step: 0
+  time_step_seconds: 0.1
+
+simulation:
+  time_limit_seconds: 120.0 # Shorter time limit since path is more direct
+  step_time_seconds: 0.1
+
+agents:
+  - id: "voronoi_uav_1"
+    type: "voronoi_bayes_agent"
+    x: 2.0
+    y: 2.0
+    traversable_hazards: ["undergrowth"]
+    heading: 45.0
+    speed_mps: 1.2
+    sensor_range: 5.0 # Shorter range forces late-stage epistemic discovery
+    num_rays: 24      # Higher fidelity for small point-obstacles
+    sensor_noise: 0.15 # Increased noise to test aleatory uncertainty handling
+    target_belief:
+      type: "point"
+      target_x: 18.0
+      target_y: 18.0
+    hazard_belief:
+      type: "uniform"
+
+targets:
+  - id: "target_0"
+    type: "evasive_target"
+    x: 18.0
+    y: 18.0
+    value: 100.0
+    traversable_hazards: []
+    speed_mps: 0.0
+
+hazards:
+  # --- Central Scattered Field ---
+  # These are positioned to break up the direct "Diagonal" path
+  - {id: "obs_1", x: 5.0, y: 5.0, type: "boulder"}
+  - {id: "obs_2", x: 6.5, y: 8.0, type: "tree"}
+  - {id: "obs_3", x: 4.0, y: 12.0, type: "boulder"}
+  
+  - {id: "obs_4", x: 10.0, y: 10.0, type: "standing_water"} # Testing traversability?
+  - {id: "obs_5", x: 9.0, y: 11.0, type: "boulder"}
+  - {id: "obs_6", x: 11.0, y: 9.0, type: "tree"}
+
+  - {id: "obs_7", x: 14.0, y: 15.0, type: "boulder"}
+  - {id: "obs_8", x: 16.0, y: 13.0, type: "tree"}
+  - {id: "obs_9", x: 13.0, y: 17.0, type: "boulder"}
+
+  # --- Perimeter Nudges ---
+  # These prevent the agent from just hugging the boundary
+  - {id: "edge_1", x: 10.0, y: 1.0, type: "tree"}
+  - {id: "edge_2", x: 1.0, y: 10.0, type: "boulder"}
+  - {id: "edge_3", x: 19.0, y: 10.0, type: "boulder"}
+  - {id: "edge_4", x: 10.0, y: 19.0, type: "tree"}
