@@ -33,6 +33,10 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
         self._escape_heading: Optional[float] = None
         self._escape_steps = 0
 
+        self._best_goal_dist = float('inf')
+        self._no_progress_steps = 0
+        self._position_history: List[tuple] = []
+
     def get_id(self) -> str:
         return self._state.id
 
@@ -71,7 +75,7 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
                 return AgentAction(target_heading=self._escape_heading, target_speed=self._state.speed_mps * 0.85)
             self._escape_steps = 0
 
-        hazard_cloud = self.sample_hazard_posterior(num_hazards=10, iterations=350, num_samples=12)
+        hazard_cloud = self.sample_hazard_posterior(num_hazards=15, iterations=400, num_samples=12)
 
         all_voronoi_maps = []
         self.last_computed_ridges = []
@@ -87,17 +91,30 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
 
         target_pos = self.target_belief_map.get_max_probability_location()
 
+        d_to_goal = math.hypot(x - target_pos[0], y - target_pos[1])
+        if d_to_goal < self._best_goal_dist - 0.3:
+            self._best_goal_dist = d_to_goal
+            self._no_progress_steps = 0
+        else:
+            self._no_progress_steps += 1
+        self._position_history.append((x, y))
+        if len(self._position_history) > 50:
+            self._position_history.pop(0)
+
         stuck_threshold = 2 if self._direct_blocked_count >= 5 else 4
         if self._stuck_counter >= stuck_threshold:
             escape = self._find_ridge_escape_heading(all_voronoi_maps, environment, dt)
             if escape is not None:
                 self._escape_heading = escape
-                self._escape_steps = 14
+                self._escape_steps = 18
+                self._current_best_heading = escape
                 self._stuck_counter = 0
                 self._direct_blocked_count = 0
                 return AgentAction(target_heading=escape, target_speed=self._state.speed_mps * 0.9)
 
-        raw_heading = self.calculate_topological_heading(all_voronoi_maps, target_pos)
+        raw_heading = self.calculate_topological_heading(
+            all_voronoi_maps, target_pos, self._no_progress_steps, self._position_history
+        )
 
         diff = (raw_heading - self._current_best_heading + 180) % 360 - 180
         self._current_best_heading = (self._current_best_heading + self._smoothing_alpha * diff) % 360
@@ -121,8 +138,19 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
         return AgentAction(target_heading=self._current_best_heading, target_speed=speed)
 
     def calculate_topological_heading(
-        self, voronoi_cloud: List[Any], target_pos: tuple[float, float]
+        self,
+        voronoi_cloud: List[Any],
+        target_pos: tuple[float, float],
+        no_progress_steps: int = 0,
+        position_history: Optional[List[tuple]] = None,
     ) -> float:
+        """
+        Ridge attraction + alignment + progress-gated goal urgency.
+
+        When the agent is making progress, ridges dominate (no goal pull).
+        When circling (no progress for many steps), a direct goal pull
+        gradually ramps up to push through gaps and break loops.
+        """
         agent_pos = np.array([self._state.x, self._state.y])
         target_arr = np.array(target_pos)
         d_agent_goal = float(np.linalg.norm(agent_pos - target_arr))
@@ -130,8 +158,8 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
         possible_headings = np.linspace(0, 360, num=72, endpoint=False)
         heading_scores = np.zeros(len(possible_headings))
 
-        RIDGE_RADIUS = 5.0
-        HAZARD_RADIUS = 5.0
+        RIDGE_RADIUS = 4.0
+        HAZARD_RADIUS = 2.0
 
         nearby_ridges: List[tuple] = []
         for vor in voronoi_cloud:
@@ -144,11 +172,12 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
                 seg_len_sq = float(np.dot(seg_vec, seg_vec))
                 if seg_len_sq < 1e-4:
                     continue
+                seg_len = math.sqrt(seg_len_sq)
                 t = float(np.clip(np.dot(agent_pos - v1, seg_vec) / seg_len_sq, 0.0, 1.0))
                 closest = v1 + t * seg_vec
                 d = float(np.linalg.norm(agent_pos - closest))
                 if d <= RIDGE_RADIUS:
-                    nearby_ridges.append((v1.copy(), v2.copy(), d))
+                    nearby_ridges.append((v1.copy(), v2.copy(), d, closest.copy(), seg_len))
 
         nearby_hazards: List[tuple] = []
         for vor in voronoi_cloud:
@@ -162,25 +191,30 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
             move_dir = np.array([math.cos(heading_rad), math.sin(heading_rad)])
 
             ridge_score = 0.0
-            for v1, v2, d_ridge in nearby_ridges:
+            for v1, v2, d_ridge, closest_pt, seg_len in nearby_ridges:
                 seg_vec = v2 - v1
-                seg_len = float(np.linalg.norm(seg_vec))
-                if seg_len < 0.1:
-                    continue
                 seg_dir = seg_vec / seg_len
 
-                proximity = math.exp(-0.55 * d_ridge)
+                proximity = math.exp(-0.35 * d_ridge)
+                length_weight = min(1.0, seg_len / 3.0)
+
+                attraction = 0.0
+                if d_ridge > 0.3:
+                    toward = closest_pt - agent_pos
+                    toward_dir = toward / d_ridge
+                    attraction = max(0.0, float(np.dot(move_dir, toward_dir)))
+
                 for sign, far_endpoint in [(1.0, v2), (-1.0, v1)]:
-                    dir_vec = sign * seg_dir
-                    align = float(np.dot(move_dir, dir_vec))
-                    if align <= 0.0:
-                        continue
+                    along = max(0.0, float(np.dot(move_dir, sign * seg_dir)))
 
                     d_end_goal = float(np.linalg.norm(far_endpoint - target_arr))
                     raw_progress = (d_agent_goal - d_end_goal) / (d_agent_goal + 1.0)
-                    goal_factor = max(0.4, 1.0 + raw_progress)
+                    goal_factor = max(0.65, 1.0 + raw_progress)
 
-                    ridge_score += align * proximity * goal_factor
+                    blend_t = min(1.0, d_ridge / 3.0)
+                    blended = (1.0 - blend_t) * along + blend_t * attraction
+
+                    ridge_score += blended * proximity * goal_factor * length_weight
 
             repulsion_score = 0.0
             for hz_pos, d_hz in nearby_hazards:
@@ -190,25 +224,38 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
             if nearby_hazards:
                 repulsion_score /= len(nearby_hazards)
 
+            goal_urgency = min(0.35, no_progress_steps * 0.005)
+
             if d_agent_goal > 0.1:
                 goal_dir = (target_arr - agent_pos) / d_agent_goal
                 goal_score = float(np.dot(move_dir, goal_dir))
             else:
                 goal_score = 0.0
 
+            novelty_score = 0.0
+            if no_progress_steps > 30 and position_history and len(position_history) > 20:
+                recent = np.array(position_history[-20:])
+                centroid = np.mean(recent, axis=0)
+                away = agent_pos - centroid
+                away_mag = float(np.linalg.norm(away))
+                if away_mag > 0.5:
+                    novelty_score = float(np.dot(move_dir, away / away_mag))
+
             if nearby_ridges:
+                ridge_w = max(0.50, 0.85 - goal_urgency)
                 heading_scores[i] = (
-                    ridge_score   * 0.70
-                    + repulsion_score * 0.20
-                    + goal_score  * 0.10
+                    ridge_score    * ridge_w
+                    + repulsion_score * 0.15
+                    + goal_score   * goal_urgency
+                    + novelty_score * min(0.15, no_progress_steps * 0.002)
                 )
             else:
-                heading_scores[i] = repulsion_score * 0.50 + goal_score * 0.50
+                heading_scores[i] = goal_score
 
         smoothed = np.convolve(heading_scores, [0.1, 0.2, 0.4, 0.2, 0.1], mode='same')
         if np.max(smoothed) > 0:
             return possible_headings[np.argmax(smoothed)]
-        
+
         return self._current_best_heading
 
     def _find_ridge_escape_heading(
@@ -218,14 +265,12 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
         dt: float,
     ) -> Optional[float]:
         """
-        Collect Voronoi ridge midpoints within a generous radius (12 m) and
-        return the heading toward the best reachable one.
+        Follow a nearby ridge *along its length* rather than aiming at its
+        midpoint (which, for a wall, points into the wall).
 
-        Scoring favours:
-        - Midpoints close to the agent (to escape quickly)
-        - Midpoints that reduce distance to target (bypass midpoints naturally
-          wrap around the obstacle so their distance to goal is shorter)
-        - Headings not in the recently-failed set
+        For each ridge segment within 10 m, compute a blended heading:
+        far from ridge → head toward it; on the ridge → follow it in the
+        direction whose endpoint is closer to the goal.
         """
         agent_pos = np.array([self._state.x, self._state.y])
         target_pos = np.array(self.target_belief_map.get_max_probability_location())
@@ -239,25 +284,53 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
             for r_idx in vor.ridge_vertices:
                 if -1 in r_idx:
                     continue
-                v1, v2 = vor.vertices[r_idx[0]], vor.vertices[r_idx[1]]
-                mid = (v1 + v2) / 2.0
-                d_agent = float(np.linalg.norm(agent_pos - mid))
-                if d_agent > 12.0:
+                v1 = vor.vertices[r_idx[0]]
+                v2 = vor.vertices[r_idx[1]]
+                seg_vec = v2 - v1
+                seg_len_sq = float(np.dot(seg_vec, seg_vec))
+                if seg_len_sq < 0.01:
                     continue
-                d_goal = float(np.linalg.norm(mid - target_pos))
-                progress_bonus = max(0.0, d_agent_goal - d_goal) * 0.3
-                score = d_agent - progress_bonus
-                candidates.append((score, mid))
+                seg_len = math.sqrt(seg_len_sq)
+                seg_dir = seg_vec / seg_len
+
+                t = float(np.clip(np.dot(agent_pos - v1, seg_vec) / seg_len_sq, 0.0, 1.0))
+                closest = v1 + t * seg_vec
+                d_ridge = float(np.linalg.norm(agent_pos - closest))
+                if d_ridge > 10.0:
+                    continue
+
+                proximity = 1.0 / (d_ridge + 0.5)
+
+                for sign, far_end in [(1.0, v2), (-1.0, v1)]:
+                    along = sign * seg_dir
+
+                    toward = closest - agent_pos
+                    toward_mag = float(np.linalg.norm(toward))
+                    if toward_mag > 0.1:
+                        toward_dir = toward / toward_mag
+                    else:
+                        toward_dir = along
+
+                    blend_w = min(1.0, d_ridge / 2.5)
+                    blended = (1.0 - blend_w) * along + blend_w * toward_dir
+                    blended_mag = float(np.linalg.norm(blended))
+                    if blended_mag < 0.01:
+                        continue
+                    blended = blended / blended_mag
+
+                    heading_deg = math.degrees(math.atan2(float(blended[1]), float(blended[0]))) % 360
+
+                    d_end_goal = float(np.linalg.norm(far_end - target_pos))
+                    progress = max(0.3, 1.0 + (d_agent_goal - d_end_goal) / (d_agent_goal + 1.0))
+
+                    candidates.append((proximity * progress, heading_deg))
 
         if not candidates:
             return None
 
-        candidates.sort(key=lambda t: t[0])
+        candidates.sort(key=lambda t: t[0], reverse=True)
 
-        for _, mid in candidates[:12]:
-            dy = float(mid[1]) - y
-            dx = float(mid[0]) - x
-            heading = math.degrees(math.atan2(dy, dx)) % 360
+        for _, heading in candidates[:16]:
             if any(abs((heading - bh + 180) % 360 - 180) < 15 for bh in self._blocked_headings):
                 continue
             angle_rad = math.radians(heading)
@@ -387,5 +460,22 @@ class VoronoiBayesAgent(Agent, Entity[AgentState]):
         )
 
     def generate_voronoi_map(self, hypothesized_hazards: np.ndarray):
-        return ScipyVoronoiComputer(hypothesized_hazards).compute_voronoi()
+        """ 
+        Note: I decided to Add virtual centroids along the map boundary so the Voronoi diagram
+        produces corridor ridges between detected obstacles and the map edge. Without these, 
+        all ridges are short between nearby MCMC centroids, and so not great for the agent to follow
+        """
+        world_w = self.hazard_belief_map.x_length
+        world_h = self.hazard_belief_map.y_length
+        margin, spacing = 2.0, 3.5
+        boundary = []
+        for t in np.arange(0, max(world_w, world_h) + spacing, spacing):
+            if t <= world_h:
+                boundary.append([-margin, t])
+                boundary.append([world_w + margin, t])
+            if t <= world_w:
+                boundary.append([t, -margin])
+                boundary.append([t, world_h + margin])
+        all_pts = np.vstack([hypothesized_hazards, np.array(boundary)])
+        return ScipyVoronoiComputer(all_pts).compute_voronoi()
     
